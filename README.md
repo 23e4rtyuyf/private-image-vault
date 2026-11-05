@@ -1,2 +1,2 @@
-# private-image-vault
-Encrypted browser-based image vault
+# a notes app
+we have notes
