@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily Notes</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #151d33;
+      --panel-2: #1c2742;
+      --text: #eef3ff;
+      --muted: #a9b5d1;
+      --accent: #7aa2ff;
+      --danger: #ff7587;
+      --border: #334263;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font: 16px/1.45 system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #17264a, var(--bg) 55%);
+    }
+    main { width: min(1050px, 100%); margin: auto; padding: 28px 16px 48px; }
+    h1 { margin: 0 0 6px; font-size: clamp(1.7rem, 4vw, 2.5rem); }
+    h2 { margin-top: 0; }
+    p { color: var(--muted); }
+    .panel {
+      margin-top: 20px; padding: 22px; background: rgba(21, 29, 51, .94);
+      border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 12px 35px #0004;
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+    .field { flex: 1 1 220px; }
+    label { display: block; margin-bottom: 6px; color: var(--muted); font-size: .92rem; }
+    input[type="password"], input[type="text"], input[type="file"] {
+      width: 100%; padding: 11px 12px; border: 1px solid var(--border);
+      border-radius: 9px; color: var(--text); background: #0c1327;
+    }
+    button {
+      padding: 11px 15px; border: 0; border-radius: 9px; color: #081127;
+      background: var(--accent); font-weight: 700; cursor: pointer;
+    }
+    button.secondary { color: var(--text); background: var(--panel-2); border: 1px solid var(--border); }
+    button.danger { color: white; background: #9e3046; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .notice { padding: 12px 14px; border-left: 4px solid var(--accent); background: #101a33; }
+    .warning { border-left-color: #e8b65b; }
+    .status { min-height: 24px; margin-top: 14px; color: var(--muted); }
+    .status.error { color: var(--danger); }
+    .toolbar {
+      position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; gap: 10px;
+      margin: -22px -22px 18px; padding: 14px 22px; background: rgba(21, 29, 51, .97);
+      border-bottom: 1px solid var(--border);
+    }
+    .dropzone {
+      padding: 28px 16px; margin-bottom: 18px; text-align: center;
+      border: 2px dashed var(--border); border-radius: 12px; color: var(--muted);
+      background: #101a33;
+    }
+    .dropzone.active { border-color: var(--accent); background: #192752; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+    .card { overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #0c1327; }
+    .thumb-button { display: block; width: 100%; padding: 0; border: 0; border-radius: 0; background: #080d1a; }
+    .card img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #080d1a; }
+    .thumb-button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+    .card-info { padding: 10px; }
+    .card-info strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-info small { color: var(--muted); }
+    .empty { padding: 35px 10px; text-align: center; color: var(--muted); border: 1px dashed var(--border); border-radius: 12px; }
+    .hidden { display: none !important; }
+    .decoy {
+      max-width: 720px; margin: 24px auto 0; padding: 22px;
+      border: 1px solid var(--border); border-radius: 16px; background: rgba(21, 29, 51, .94);
+    }
+    .decoy h2 { margin: 0 0 8px; }
+    .decoy-note {
+      margin-top: 16px; padding: 14px; border-radius: 10px;
+      color: var(--muted); background: #0c1327;
+    }
+    #appTitle { cursor: default; user-select: none; }
+    .viewer {
+      position: fixed; inset: 0; z-index: 10; display: grid; place-items: center;
+      padding: 24px; background: rgba(2, 5, 14, .94);
+    }
+    .viewer img { max-width: 100%; max-height: 85vh; object-fit: contain; border-radius: 10px; }
+    .viewer-close {
+      position: fixed; top: 14px; right: 14px; min-width: 46px; min-height: 46px;
+      border-radius: 50%; color: var(--text); background: var(--panel-2); font-size: 1.4rem;
+    }
+    .quick-exit { color: #fff !important; background: #7d3545 !important; }
+    .storage-help {
+      margin-top: 14px; padding: 12px 14px; border-radius: 10px;
+      color: var(--muted); background: #101a33;
+    }
+    .storage-help a {
+      display: inline-block; margin-top: 10px; padding: 11px 15px;
+      border: 1px solid var(--border); border-radius: 9px;
+      color: var(--text); background: var(--panel-2); text-decoration: none;
+      font-weight: 700;
+    }
+    @media (max-width: 600px) {
+      main { padding: 18px 10px 36px; }
+      .panel { padding: 16px; }
+      .toolbar { margin: -16px -16px 16px; padding: 12px 16px; }
+      .toolbar > button, .toolbar > label { flex: 1 1 calc(50% - 10px); text-align: center; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .card-info { padding: 8px; }
+      .card-info button { width: 100%; padding: 9px 8px; }
+    }
+    footer { margin-top: 20px; color: var(--muted); font-size: .88rem; }
+    code { color: #c8d6ff; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 id="appTitle">Daily Notes</h1>
+    <p id="appSubtitle">A simple place to keep track of everyday thoughts.</p>
+
+    <section id="decoyPanel" class="decoy">
+      <h2>Today</h2>
+      <p>Keep your plans, reminders, and ideas together.</p>
+      <div class="decoy-note">Tap the plus button when you are ready to add a note.</div>
+    </section>
+
+    <section id="lockPanel" class="panel hidden">
+      <h2 id="lockTitle">Unlock your vault</h2>
+      <p id="firstUseHint">On first use, this password creates the vault. It is never saved in this file or in browser storage.</p>
+      <form id="unlockForm">
+        <div class="row">
+          <div class="field">
+            <label for="password">Vault password</label>
+            <input id="password" type="password" autocomplete="new-password" minlength="12" required>
+          </div>
+          <button id="unlockButton" type="submit">Unlock</button>
+        </div>
+      </form>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div id="storageHelp" class="storage-help hidden">
+        This embedded page cannot use browser storage here. Open it in its own tab to save securely.
+        <a id="openStandaloneLink" href="#" target="_blank" rel="noopener noreferrer">Open in new tab</a>
+      </div>
+    </section>
+
+    <section id="vaultPanel" class="panel hidden">
+      <div class="toolbar">
+        <button id="addButton" class="secondary" type="button">＋ Add images</button>
+        <input id="imageInput" type="file" accept="image/*" multiple hidden>
+        <button id="exportButton" class="secondary" type="button">Export encrypted backup</button>
+        <button id="importButton" class="secondary" type="button">Import backup</button>
+        <input id="backupInput" type="file" accept="application/json,.json" hidden>
+        <button id="lockButton" class="secondary" type="button">Lock</button>
+        <button id="quickExitButton" class="quick-exit" type="button" title="Return to Daily Notes">Quick exit</button>
+        <button id="wipeButton" class="danger" type="button">Delete vault</button>
+      </div>
+      <div id="dropzone" class="dropzone" tabindex="0">
+        <strong>Paste or drop private images here</strong><br>
+        Press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>, drag image files here, or use “Add images”.
+      </div>
+      <div id="gallery" class="grid"></div>
+    </section>
+
+    <section id="securityPanel" class="panel notice warning hidden">
+      <strong>Important security limits</strong>
+      <p>This protects data stored by this page, but no web page can promise “unhackable” security. Use a long unique password, keep your device and browser updated, and do not use this on a shared or infected device. Storage is tied to the exact site origin; embedding on Google Sites can create a separate vault, and some browsers block storage in embedded frames. Export encrypted backups regularly.</p>
+    </section>
+    <footer>Keep your notes organized and up to date.</footer>
+  </main>
+  <div id="viewer" class="viewer hidden" role="dialog" aria-modal="true" aria-label="Private image viewer">
+    <button id="viewerClose" class="viewer-close" type="button" aria-label="Close image viewer">×</button>
+    <img id="viewerImage" alt="">
+  </div>
+
+  <script>
+    "use strict";
+    const DB_NAME = "privateImageVault";
+    const DB_VERSION = 1;
+    const PBKDF2_ROUNDS = 600000;
+    const enc = new TextEncoder();
+    const dec = new TextDecoder();
+    let db;
+    let key;
+    let vaultSalt;
+    let items = [];
+
+    const $ = (id) => document.getElementById(id);
+    let titleTaps = 0;
+    let titleTapTimer;
+    const setStatus = (message, error = false) => {
+      $("status").textContent = message;
+      $("status").className = `status${error ? " error" : ""}`;
+    };
+
+    function showStorageHelp() {
+      $("storageHelp").classList.remove("hidden");
+      $("unlockButton").disabled = false;
+    }
+
+    async function requestEmbeddedStorageAccess() {
+      if (window.self === window.top || typeof document.requestStorageAccess !== "function") return;
+      try {
+        await document.requestStorageAccess();
+      } catch {
+        throw new Error("Embedded storage is blocked.");
+      }
+    }
+
+    function showUnlock() {
+      $("decoyPanel").classList.add("hidden");
+      $("lockPanel").classList.remove("hidden");
+      $("securityPanel").classList.remove("hidden");
+      $("appSubtitle").textContent = "Enter your password to continue.";
+      $("password").focus();
+    }
+
+    $("appTitle").addEventListener("click", () => {
+      titleTaps++;
+      clearTimeout(titleTapTimer);
+      titleTapTimer = setTimeout(() => { titleTaps = 0; }, 1200);
+      if (titleTaps >= 5) {
+        titleTaps = 0;
+        showUnlock();
+      }
+    });
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = () => {
+          const database = request.result;
+          if (!database.objectStoreNames.contains("config")) database.createObjectStore("config", { keyPath: "id" });
+          if (!database.objectStoreNames.contains("images")) database.createObjectStore("images", { keyPath: "id" });
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("Could not open private storage."));
+      });
+    }
+
+    function requestPromise(request) {
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("Private storage operation failed."));
+      });
+    }
+
+    function store(name, mode = "readonly") {
+      return db.transaction(name, mode).objectStore(name);
+    }
+
+    function toB64(bytes) {
+      let output = "";
+      const chunk = 0x8000;
+      for (let index = 0; index < bytes.length; index += chunk) {
+        output += String.fromCharCode(...bytes.subarray(index, index + chunk));
+      }
+      return btoa(output);
+    }
+
+    function fromB64(value) {
+      const binary = atob(value);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+      return bytes;
+    }
+
+    function randomB64(size) {
+      return toB64(crypto.getRandomValues(new Uint8Array(size)));
+    }
+
+    async function deriveKey(password, salt) {
+      const material = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt, iterations: PBKDF2_ROUNDS, hash: "SHA-256" },
+        material, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptBytes(bytes) {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, bytes);
+      return { iv: toB64(iv), data };
+    }
+
+    async function decryptBytes(record, decryptKey = key) {
+      return crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(record.iv) }, decryptKey, record.data);
+    }
+
+    async function encryptJson(value) {
+      return encryptBytes(enc.encode(JSON.stringify(value)));
+    }
+
+    async function decryptJson(record, decryptKey = key) {
+      return JSON.parse(dec.decode(await decryptBytes(record, decryptKey)));
+    }
+
+    async function getConfig() {
+      return requestPromise(store("config").get("vault"));
+    }
+
+    async function saveConfig(config) {
+      return requestPromise(store("config", "readwrite").put(config));
+    }
+
+    async function getImageRecords() {
+      return requestPromise(store("images").getAll());
+    }
+
+    async function addImageRecord(record) {
+      return requestPromise(store("images", "readwrite").put(record));
+    }
+
+    async function deleteImageRecord(id) {
+      return requestPromise(store("images", "readwrite").delete(id));
+    }
+
+    async function clearDatabase() {
+      await requestPromise(store("images", "readwrite").clear());
+      await requestPromise(store("config", "readwrite").clear());
+    }
+
+    async function unlock(password) {
+      const config = await getConfig();
+      if (!config) {
+        if (password.length < 12) throw new Error("Use at least 12 characters.");
+        vaultSalt = crypto.getRandomValues(new Uint8Array(16));
+        key = await deriveKey(password, vaultSalt);
+        const check = await encryptJson({ check: randomB64(24) });
+        await saveConfig({ id: "vault", version: 1, salt: toB64(vaultSalt), check });
+        items = [];
+        return;
+      }
+      vaultSalt = fromB64(config.salt);
+      const candidateKey = await deriveKey(password, vaultSalt);
+      await decryptJson(config.check, candidateKey);
+      key = candidateKey;
+      const records = await getImageRecords();
+      items = [];
+      for (const record of records) {
+        const metadata = await decryptJson(record.metadata);
+        items.push({ ...metadata, id: record.id, iv: record.iv, data: record.data });
+      }
+    }
+
+    async function addFiles(files) {
+      const imageFiles = [...files].filter((file) => file.type.startsWith("image/"));
+      if (!imageFiles.length) throw new Error("No image files were found.");
+      setStatus(`Encrypting ${imageFiles.length} image${imageFiles.length === 1 ? "" : "s"}…`);
+      for (const file of imageFiles) {
+        const id = crypto.randomUUID();
+        const encryptedImage = await encryptBytes(await file.arrayBuffer());
+        const metadata = await encryptJson({
+          name: file.name || "pasted-image",
+          type: file.type || "image/png",
+          size: file.size,
+          added: Date.now()
+        });
+        const record = { id, iv: encryptedImage.iv, data: encryptedImage.data, metadata };
+        await addImageRecord(record);
+        items.push({ id, name: file.name || "pasted-image", type: file.type || "image/png", size: file.size, added: record.added, iv: record.iv, data: record.data });
+      }
+      await refreshItems();
+      render();
+      setStatus("Images encrypted and saved in this browser.");
+    }
+
+    async function refreshItems() {
+      const records = await getImageRecords();
+      items = [];
+      for (const record of records) {
+        const metadata = await decryptJson(record.metadata);
+        items.push({ ...metadata, id: record.id, iv: record.iv, data: record.data });
+      }
+      items.sort((a, b) => b.added - a.added);
+    }
+
+    function formatSize(bytes) {
+      if (!bytes) return "";
+      const units = ["B", "KB", "MB", "GB"];
+      let value = bytes;
+      let index = 0;
+      while (value >= 1024 && index < units.length - 1) { value /= 1024; index++; }
+      return `${value.toFixed(index ? 1 : 0)} ${units[index]}`;
+    }
+
+    async function imageUrl(item) {
+      const bytes = await decryptBytes(item);
+      return URL.createObjectURL(new Blob([bytes], { type: item.type }));
+    }
+
+    async function render() {
+      const gallery = $("gallery");
+      gallery.replaceChildren();
+      if (!items.length) {
+        gallery.innerHTML = '<div class="empty">No private images yet. Paste, drop, or add an image above.</div>';
+        return;
+      }
+      for (const item of items) {
+        const card = document.createElement("article");
+        card.className = "card";
+        const image = document.createElement("img");
+        image.alt = item.name;
+        image.loading = "lazy";
+        image.src = await imageUrl(item);
+        const thumbButton = document.createElement("button");
+        thumbButton.className = "thumb-button";
+        thumbButton.type = "button";
+        thumbButton.title = "Open image";
+        thumbButton.addEventListener("click", () => openViewer(image.src, item.name));
+        thumbButton.append(image);
+        const info = document.createElement("div");
+        info.className = "card-info";
+        const name = document.createElement("strong");
+        name.textContent = item.name;
+        const date = document.createElement("small");
+        date.textContent = `${new Date(item.added).toLocaleString()}${item.size ? ` · ${formatSize(item.size)}` : ""}`;
+        const remove = document.createElement("button");
+        remove.className = "danger";
+        remove.type = "button";
+        remove.textContent = "Remove";
+        remove.style.marginTop = "8px";
+        remove.addEventListener("click", async () => {
+          await deleteImageRecord(item.id);
+          await refreshItems();
+          render();
+          setStatus("Image removed.");
+        });
+        info.append(name, date, remove);
+        card.append(thumbButton, info);
+        gallery.append(card);
+      }
+    }
+
+    function openViewer(url, name) {
+      $("viewerImage").src = url;
+      $("viewerImage").alt = name;
+      $("viewer").classList.remove("hidden");
+      $("viewerClose").focus();
+    }
+
+    function closeViewer() {
+      $("viewer").classList.add("hidden");
+      $("viewerImage").src = "";
+    }
+
+    async function exportBackup() {
+      const config = await getConfig();
+      const records = await getImageRecords();
+      const backup = { format: "private-image-vault", version: 1, config, records };
+      const blob = new Blob([JSON.stringify(backup, (_, value) => value instanceof ArrayBuffer ? toB64(new Uint8Array(value)) : value)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `encrypted-vault-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }
+
+    async function importBackup(file) {
+      const parsed = JSON.parse(await file.text());
+      if (parsed?.format !== "private-image-vault" || parsed.version !== 1 || !parsed.config || !Array.isArray(parsed.records)) {
+        throw new Error("That is not a valid encrypted vault backup.");
+      }
+      if (!confirm("Replace this browser’s current vault with the backup?")) return;
+      await clearDatabase();
+      const config = { ...parsed.config, check: { ...parsed.config.check, data: fromB64(parsed.config.check.data) } };
+      await saveConfig(config);
+      for (const input of parsed.records) {
+        await addImageRecord({ ...input, data: fromB64(input.data), metadata: { ...input.metadata, data: fromB64(input.metadata.data) } });
+      }
+      location.reload();
+    }
+
+    $("unlockForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      $("unlockButton").disabled = true;
+      setStatus("Opening encrypted vault…");
+      try {
+        await requestEmbeddedStorageAccess();
+        if (!db) db = await openDatabase();
+        await unlock($("password").value);
+        $("password").value = "";
+        $("lockPanel").classList.add("hidden");
+        $("decoyPanel").classList.add("hidden");
+        $("securityPanel").classList.add("hidden");
+        $("vaultPanel").classList.remove("hidden");
+        await render();
+      } catch (error) {
+        const storageError = error.message === "Embedded storage is blocked."
+          || ["QuotaExceededError", "SecurityError", "InvalidStateError", "NotAllowedError"].includes(error.name)
+          || /storage|indexeddb|database|quota|permission/i.test(error.message || "");
+        if (storageError || !db) {
+          setStatus("Google Sites blocked this page’s private storage. Open it in a new tab.", true);
+          showStorageHelp();
+        } else {
+          setStatus(error.message === "Use at least 12 characters." ? error.message : `Unlock failed: ${error.name || "browser error"}.`, true);
+        }
+      } finally {
+        $("unlockButton").disabled = false;
+      }
+    });
+
+    $("addButton").addEventListener("click", () => $("imageInput").click());
+    $("imageInput").addEventListener("change", async (event) => {
+      try { await addFiles(event.target.files); } catch (error) { setStatus(error.message, true); }
+      event.target.value = "";
+    });
+    $("viewerClose").addEventListener("click", closeViewer);
+    $("viewer").addEventListener("click", (event) => {
+      if (event.target === $("viewer")) closeViewer();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if (!$("viewer").classList.contains("hidden")) closeViewer();
+      else if (!$("vaultPanel").classList.contains("hidden")) lockVault();
+    });
+
+    $("dropzone").addEventListener("dragover", (event) => {
+      event.preventDefault();
+      $("dropzone").classList.add("active");
+    });
+    $("dropzone").addEventListener("dragleave", () => $("dropzone").classList.remove("active"));
+    $("dropzone").addEventListener("drop", async (event) => {
+      event.preventDefault();
+      $("dropzone").classList.remove("active");
+      try { await addFiles(event.dataTransfer.files); } catch (error) { setStatus(error.message, true); }
+    });
+    document.addEventListener("paste", async (event) => {
+      if ($("vaultPanel").classList.contains("hidden")) return;
+      const files = [...event.clipboardData.items]
+        .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+        .map((item) => item.getAsFile())
+        .filter(Boolean);
+      if (!files.length) return;
+      event.preventDefault();
+      try { await addFiles(files); } catch (error) { setStatus(error.message, true); }
+    });
+
+    function lockVault() {
+      key = null;
+      items = [];
+      closeViewer();
+      $("vaultPanel").classList.add("hidden");
+      $("lockPanel").classList.add("hidden");
+      $("securityPanel").classList.add("hidden");
+      $("decoyPanel").classList.remove("hidden");
+      $("appSubtitle").textContent = "A simple place to keep track of everyday thoughts.";
+    }
+    $("lockButton").addEventListener("click", lockVault);
+    $("quickExitButton").addEventListener("click", lockVault);
+    $("openStandaloneLink").href = window.location.href;
+    $("wipeButton").addEventListener("click", async () => {
+      if (!confirm("Delete this vault and all encrypted images? This cannot be undone.")) return;
+      await clearDatabase();
+      location.reload();
+    });
+    $("exportButton").addEventListener("click", async () => {
+      try { await exportBackup(); setStatus("Encrypted backup downloaded."); } catch (error) { setStatus(error.message, true); }
+    });
+    $("importButton").addEventListener("click", () => $("backupInput").click());
+    $("backupInput").addEventListener("change", async (event) => {
+      try { await importBackup(event.target.files[0]); } catch (error) { setStatus(error.message, true); }
+      event.target.value = "";
+    });
+
+    (async () => {
+      if (!window.crypto?.subtle || !window.indexedDB) {
+        $("unlockButton").disabled = true;
+        setStatus("This browser does not support the required secure storage APIs.", true);
+        return;
+      }
+      try {
+        db = await openDatabase();
+        const config = await getConfig();
+        if (config) {
+          $("lockTitle").textContent = "Unlock your vault";
+          $("firstUseHint").textContent = "Enter the password used when this vault was created.";
+        } else {
+          $("lockTitle").textContent = "Create your vault";
+          $("unlockButton").textContent = "Create vault";
+        }
+      } catch (error) {
+        setStatus("This embedded page cannot use private browser storage. Open it in a new tab.", true);
+        showStorageHelp();
+      }
+    })();
+  </script>
+</body>
+</html>
